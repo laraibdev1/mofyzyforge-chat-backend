@@ -5,6 +5,7 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import uuid
+import os  # <-- for environment variables
 
 app = Flask(__name__)
 CORS(app)
@@ -88,7 +89,7 @@ def handle_connect():
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    for user_id, sid in connected_users.items():
+    for user_id, sid in list(connected_users.items()):
         if sid == request.sid:
             del connected_users[user_id]
             emit('status', {'userId': user_id, 'status': 'offline'}, broadcast=True)
@@ -121,4 +122,6 @@ def handle_typing(data):
         }, room=receiver_sid)
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, port=5000)
+    port = int(os.environ.get('PORT', 5000))  # <-- use host-assigned port if available
+    print(f"Starting server on port {port}")
+    socketio.run(app, debug=True, host='0.0.0.0', port=port)
